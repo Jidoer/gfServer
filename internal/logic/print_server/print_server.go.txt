@@ -1,0 +1,124 @@
+package printserver
+
+import (
+	"context"
+	"gfAdmin/internal/dao"
+	"gfAdmin/internal/model"
+
+	// "gfAdmin/internal/model"
+	"gfAdmin/internal/model/do"
+	"gfAdmin/internal/model/entity"
+	"gfAdmin/internal/service"
+
+	"github.com/gogf/gf/v2/errors/gerror"
+	// "github.com/gogf/gf/v2/os/gctx"
+)
+
+type (
+	sPrintServer struct{}
+)
+
+func init() {
+	service.RegisterPrintServer(New())
+}
+
+func New() service.IPrintServer {
+	return &sPrintServer{}
+}
+
+func (s *sPrintServer) GetPrintServerList(ctx context.Context, page int, limit int) (*[]entity.PrintServer, int, error) {
+	var total int
+	var printServers []entity.PrintServer
+	err := dao.PrintServer.Ctx(ctx).Where(do.PrintServer{}).Limit(limit).Offset((page-1)*limit).ScanAndCount(&printServers, &total, false)
+	return &printServers, total, err
+}
+
+func (s *sPrintServer) GetPrintServer(ctx context.Context, id int) (*entity.PrintServer, error) {
+	printServer := entity.PrintServer{}
+	err := dao.PrintServer.Ctx(ctx).Where(do.PrintServer{Id: id}).Scan(&printServer)
+	return &printServer, err
+}
+
+func (s *sPrintServer) AddPrintServer(ctx context.Context, printServer *entity.PrintServer) error {
+	_, err := dao.PrintServer.Ctx(ctx).Insert(printServer)
+	// r.RowsAffected()
+	return err
+}
+
+func (s *sPrintServer) UpgradePrintServer(ctx context.Context, printServer *entity.PrintServer) error {
+	_, err := dao.PrintServer.Ctx(ctx).Save(printServer)
+	return err
+}
+
+//禁用
+// func (s *sPrintServer) DeletePrintServer(ctx context.Context, id int) error {
+// 	_, err := dao.PrintServer.Ctx(ctx).Where(do.PrintServer{Id: id}).Delete()
+// 	return err
+// }
+
+func (s *sPrintServer) GetPrintServerByToken(ctx context.Context, token string) (*entity.PrintServer, error) {
+	printServer := entity.PrintServer{}
+	err := dao.PrintServer.Ctx(ctx).Where(do.PrintServer{Token: token}).Scan(&printServer)
+	return &printServer, err
+}
+
+// passport是序列号 token是登录秘钥 可通过服务器~客户端协商更新
+func (s *sPrintServer) GetPrintServerByPassport(ctx context.Context, passport string) (*entity.PrintServer, error) {
+	printServer := entity.PrintServer{}
+	err := dao.PrintServer.Ctx(ctx).Where(do.PrintServer{Passport: passport}).Scan(&printServer)
+	return &printServer, err
+}
+
+// func (s *sPrintServer)
+
+func (s *sPrintServer) DB_Auth(ctx context.Context, passport string, token string) error {
+	var serv *entity.PrintServer
+	//1.直接用数据库验证可缓存 在更新密钥时更新缓存...
+	g, err := dao.PrintServer.Ctx(ctx).Where(do.PrintServer{Passport: passport, Token: token}).One()
+	if err != nil {
+		return err
+	}
+	g.Struct(&serv)
+	if serv == nil {
+		return gerror.New("打印机认证失败！")
+	}
+	session:= model.PrintServer_Session{
+		Id: serv.Id,
+		Passport: serv.Passport,
+		Token: serv.Token,
+		Name: serv.Name,
+		Type: serv.Type,
+		LocationType: serv.LocationType,
+		Location: serv.Location,
+		UsbProduct: serv.UsbProduct,
+		Balance: serv.Balance,
+		WithdrawnMoney: serv.WithdrawnMoney,
+		// IsOnline: serv.IsOnline,
+		// Ban: serv.Ban,
+		// ExpirationTime: serv.ExpirationTime,
+	}
+	context.WithValue(ctx, "auth", model.ContextPrintServer{
+		Session: &session,
+	})
+	return nil
+}
+
+func (s* sPrintServer) SetClientID(ctx context.Context,id string) error{
+	service.PrintServer().Get(ctx).Session.ClientID = id
+	return nil
+}
+
+func (s *sPrintServer) Get(ctx context.Context) *model.ContextPrintServer {
+	value := ctx.Value("auth")
+	if value == nil {
+		return nil
+	}
+	if localCtx, ok := value.(*model.ContextPrintServer); ok {
+		return localCtx
+	}
+	return nil
+}
+
+
+
+

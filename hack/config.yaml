@@ -1,0 +1,11 @@
+# GoFrame CLI tool configuration.
+gfcli:
+  gen:
+    dao:
+      - link:  "mysql:root:mysql_AFRWAa@tcp(47.93.100.223:3307)/hellos" #"sqlite::@file(./data/data.sqlite3)" #"mysql:root:12345678@tcp(127.0.0.1:3306)/test"
+        tables: "User,SystemMenus,roles,permissions,role_permissions,ABTokens,BannedTokens" #ABTokens 如果允许登录又无账户则创建PrintServer
+        removePrefix: "gf_"
+        descriptionTag: true
+        noModelComment: true
+# session:
+#   name: "my_session_id"

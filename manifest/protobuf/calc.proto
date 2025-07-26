@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package protorpc;
+option go_package ="../protorpc";
+option csharp_namespace = "cspb";  // 给C#提供的选项
+
+message CalcParam {
+    int64   num     = 1;
+}
+
+message CalcResult {
+    int64   num     = 1;
+}

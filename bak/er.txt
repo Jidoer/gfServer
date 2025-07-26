@@ -1,0 +1,10 @@
+func (s *sSystem) InitMenu(ctx context.Context) error {
+	return dao.SystemMenus.Ctx(ctx).Transaction(ctx, func(ctx context.Context, tx gdb.TX) error {
+		_, err := dao.SystemMenus.Ctx(ctx).Delete(do.SystemMenus{})
+		if err != nil {
+			return err
+		}
+		_, err = dao.SystemMenus.Ctx(ctx).Insert()
+		return err
+	})
+}

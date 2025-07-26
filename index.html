@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户管理</title>
+    <script>
+        const API_BASE = "http://localhost:5000"; // 替换为你的后端地址
+
+        async function login() {
+            const passport = document.getElementById("login-passport").value;
+            const password = document.getElementById("login-password").value;
+            const response = await fetch(`${API_BASE}/user/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ Passport: passport, Password: password })
+            });
+            const result = await response.json();
+            if (result.code === 0) {
+                localStorage.setItem("token", result.data.token);
+                alert("登录成功！");
+            } else {
+                alert("登录失败: " + result.message);
+            }
+        }
+
+        async function getUserInfo() {
+            const token = localStorage.getItem("token");
+            const response = await fetch(`${API_BASE}/user/info`, {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            const result = await response.json();
+            document.getElementById("user-info").innerText = JSON.stringify(result.data, null, 2);
+        }
+
+        async function getUserList() {
+            const token = localStorage.getItem("token");
+            const response = await fetch(`${API_BASE}/admin/user/list?Page=1&Limit=10`, {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            const result = await response.json();
+            document.getElementById("user-list").innerText = JSON.stringify(result.data.list, null, 2);
+        }
+    </script>
+</head>
+<body>
+    <h2>用户登录</h2>
+    <input type="text" id="login-passport" placeholder="账号" />
+    <input type="password" id="login-password" placeholder="密码" />
+    <button onclick="login()">登录</button>
+
+    <h2>用户信息</h2>
+    <button onclick="getUserInfo()">获取用户信息</button>
+    <pre id="user-info"></pre>
+
+    <h2>用户列表</h2>
+    <button onclick="getUserList()">获取用户列表</button>
+    <pre id="user-list"></pre>
+</body>
+</html>

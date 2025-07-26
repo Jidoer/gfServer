@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package protorpc;
+option go_package ="../protorpc";
+option csharp_namespace = "cspb";  // 给C#提供的选项
+
+message GetStutusParam {
+    string  stutus_type    = 1; //任意
+}
+
+message GetStutusResult {
+    string  token       = 1;
+    bool have_wifi = 2;
+    bool have_4G = 3;
+    string gps =4;
+    string WIFI = 5;
+    string USB_DEVICE_NAME = 6;
+    string Device_Name = 7;
+    // string Seris_ID = 8;
+    // string 
+}

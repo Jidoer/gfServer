@@ -1,0 +1,42 @@
+// ================================================================================
+// Code generated and maintained by GoFrame CLI tool. DO NOT EDIT.
+// You can delete these comments if you wish manually maintain this interface file.
+// ================================================================================
+
+package service
+
+import (
+	"context"
+	"gfAdmin/internal/model"
+	"gfAdmin/internal/model/entity"
+)
+
+type (
+	IPrintServer interface {
+		GetPrintServerList(ctx context.Context, page int, limit int) (*[]entity.PrintServer, int, error)
+		GetPrintServer(ctx context.Context, id int) (*entity.PrintServer, error)
+		AddPrintServer(ctx context.Context, printServer *entity.PrintServer) error
+		UpgradePrintServer(ctx context.Context, printServer *entity.PrintServer) error
+		GetPrintServerByToken(ctx context.Context, token string) (*entity.PrintServer, error)
+		// passport是序列号 token是登录秘钥 可通过服务器~客户端协商更新
+		GetPrintServerByPassport(ctx context.Context, passport string) (*entity.PrintServer, error)
+		DB_Auth(ctx context.Context, passport string, token string) error
+		SetClientID(ctx context.Context, id string) error
+		Get(ctx context.Context) *model.ContextPrintServer
+	}
+)
+
+var (
+	localPrintServer IPrintServer
+)
+
+func PrintServer() IPrintServer {
+	if localPrintServer == nil {
+		panic("implement not found for interface IPrintServer, forgot register?")
+	}
+	return localPrintServer
+}
+
+func RegisterPrintServer(i IPrintServer) {
+	localPrintServer = i
+}
