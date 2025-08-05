@@ -1,18 +1,18 @@
 package call
 
 import (
-	"fmt"
-	"gfAdmin/internal/protorpc"
+	"gfAdmin/internal/client"
+	// "gfAdmin/internal/protorpc"
 	pc "gfAdmin/internal/protorpc"
-	"net"
+	"fmt"
+	// "net"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/gorilla/websocket"
 )
-
-var call_id uint64
 
 type ContextPtr struct {
 	Req *pc.ServerMessage //*Request
@@ -51,18 +51,14 @@ func NewProtoRpcClient() *ProtoRpcClient {
 	client := &ProtoRpcClient{
 		Calls: make(map[uint64]*ContextPtr),
 	}
-
 	return client
 }
 
-func generateID() uint64 {
-	return atomic.AddUint64(&call_id, 1)
-}
+var id uint64 = 0 //递增
 
-func (client *ProtoRpcClient) Call(conn *net.Conn, req *pc.ServerMessage, timeoutMs int) *pc.ClientMessage {
-	//生成req.ID
-	req.Id = generateID()
+func (client *ProtoRpcClient) Call(cli *client.Client, req *pc.ServerMessage, timeoutMs int) *pc.ClientMessage {
 	client.CallsMutex.Lock()
+	req.Id = atomic.AddUint64(&id, 1)
 	ctx := &ContextPtr{
 		Req: req,
 		//Cond: sync.NewCond(&sync.Mutex{}),
@@ -78,10 +74,27 @@ func (client *ProtoRpcClient) Call(conn *net.Conn, req *pc.ServerMessage, timeou
 	msg.Head.Length = uint32(len(serverMessageBuf))
 	msg.Body = serverMessageBuf
 	buf := make([]byte, 1024)
-	len_, _ := protorpc.ProtorpcPack(&msg, &buf)
-	(*conn).Write(buf[:len_]) //not safe
+	len_, _ := pc.ProtorpcPack(&msg, &buf)
+	if(cli != nil){
+		if(cli.WsConn != nil) {
+			// WebSocket connection
+			err := (*cli.WsConn).WriteMessage(websocket.BinaryMessage, buf[:len_])
+			if err != nil {
+				fmt.Println("Error writing to WebSocket:", err)
+				return nil
+			}
+		}
+		if(cli.TcpConn != nil) {
+			// TCP connection
+			_, err := (*cli.TcpConn).Write(buf[:len_])
+			if err != nil {
+				fmt.Println("Error writing to TCP connection:", err)
+				return nil
+			}
+		}
+	}
+	//(*conn).Write(buf[:len_])
 	ctx.Wait(timeoutMs)
-
 	client.CallsMutex.Lock()
 	defer client.CallsMutex.Unlock()
 	delete(client.Calls, req.Id)

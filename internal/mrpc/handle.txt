@@ -1,0 +1,87 @@
+
+func HandleConnection(ctx context.Context,conn TransportConn, setting UnpackSetting) { //加入个session指针传入 *Client_info 可空。。
+	//defer conn.Close()
+	// client := NewClient(&conn) // 创建设备信息
+	// service.PrintServer().SetClientID(ctx,client.Id)
+	id := service.PrintServer().Get(ctx).Session.Passport
+	client := New(id)
+	client.WsConn = conn.WsConn
+	
+	ps := service.PrintServer().Get(ctx)
+	if(ps == nil){
+		logger.Error(ctx,"Connect error: Get PrintServer info error")
+		return
+	}
+	control.Subscribe(client)  // 设备连接中控台
+	defer func() {
+		if conn.WsConn != nil {
+			control.UnSubscribe(client)
+			(*conn.WsConn).Close()
+			return
+		}
+		if conn.TcpConn != nil {
+			control.UnSubscribe(client)
+			(*conn.TcpConn).Close()
+		}
+	}()
+
+	buffer := make([]byte, setting.PackageMaxLength)
+	for {
+		var read_err error
+		n := 0
+
+		if conn.TransportStack == "tcp" {
+			n, read_err = (*conn.TcpConn).Read(buffer)
+		} else if conn.TransportStack == "websocket" {
+			_, p, err0 := (*conn.WsConn).ReadMessage()
+			if err0 != nil {
+				fmt.Printf("Client(%s)读取失败!\n", conn.TransportStack)
+				break
+			}
+			n = len(p)
+			buffer = p
+		}
+		if read_err != nil {
+			fmt.Printf("Client(%s)读取失败!\n", conn.TransportStack)
+			break
+		}
+
+		if n < setting.BodyOffset+setting.LengthFieldBytes {
+			fmt.Println("Received data is too short")
+			continue
+		}
+		fmt.Println("[me<-]Received data:")
+		//print hex
+		for i := 0; i < setting.BodyOffset; i++ {
+			fmt.Printf("%02x ", buffer[i])
+		}
+		fmt.Printf("\n")
+		fmt.Printf("input<-Hex: %s\n", hex.Dump(buffer[:n]))
+		msg := protorpc.ProtoRPCMessage{}
+		len_, err := protorpc.ProtorpcUnpack(&msg, buffer[:n])
+		fmt.Println("[?]Unpacked length:", len_)
+		if err != nil {
+			fmt.Println("Error unpacking:", err)
+			continue
+		}
+		ckerr := protorpc.ProtorpcHeadCheck(&msg.Head)
+		if ckerr != nil {
+			fmt.Println("Check error:", ckerr)
+			continue
+		}
+		var client_req protorpc.ClientMessage
+		err_ := proto.Unmarshal([]byte(msg.Body), &client_req)
+		if err_ != nil {
+			fmt.Println("Error proto unpacking:", err_)
+			continue
+		}
+		//fmt.Printf("Received client message: %v\n", client_req)
+		//res := protorpc.ServerMessage{}
+		if client_req.IsReq {
+			go onReqMessage(&conn, &client_req)
+		} else {
+			go onResMessage(&conn, &client_req)
+		}
+
+	}
+}

@@ -18,7 +18,7 @@ import (
 	"gfAdmin/internal/controller/system"
 	"gfAdmin/internal/controller/test_api"
 	"gfAdmin/internal/controller/user"
-	"gfAdmin/internal/rpc"
+	"gfAdmin/internal/mrpc"
 	"gfAdmin/internal/service"
 
 	"github.com/gorilla/websocket"
@@ -47,25 +47,30 @@ func wsHandler(r *ghttp.Request) {
 	// 	r.Response.WriteStatus(http.StatusForbidden)
 	// 	return
 	// }
+	// service.BizCtx().Init()
+	logger.Info(r.Context(), "WebSocket 验证...")
+	service.Middleware().Ctx(r)
+	service.Middleware().Auth(r)
+
 	logger.Info(r.Context(), "WebSocket 认证成功 连接建立...")
 	conn, err := upgrader.Upgrade(r.Response.ResponseWriter, r.Request, nil)
 	if err != nil {
 		logger.Error(r.Context(), "WebSocket 连接失败:", err)
 		return
 	}
-	unpackSetting := rpc.UnpackSetting{
+	unpackSetting := mrpc.UnpackSetting{
 		Mode:              1, // 自定义模式
-		PackageMaxLength:  rpc.DEFAULT_PACKAGE_MAX_LENGTH,
-		BodyOffset:        rpc.PROTORPC_HEAD_LENGTH,
-		LengthFieldOffset: rpc.PROTORPC_HEAD_LENGTH_FIELD_OFFSET,
-		LengthFieldBytes:  rpc.PROTORPC_HEAD_LENGTH_FIELD_BYTES,
+		PackageMaxLength:  mrpc.DEFAULT_PACKAGE_MAX_LENGTH,
+		BodyOffset:        mrpc.PROTORPC_HEAD_LENGTH,
+		LengthFieldOffset: mrpc.PROTORPC_HEAD_LENGTH_FIELD_OFFSET,
+		LengthFieldBytes:  mrpc.PROTORPC_HEAD_LENGTH_FIELD_BYTES,
 	}
 	//r.Session.
-	transport_conn := rpc.TransportConn{
+	transport_conn := mrpc.TransportConn{
 		TransportStack: "websocket",
 		WsConn:         conn,
 	}
-	rpc.HandleConnection(r.Context(), transport_conn, unpackSetting)
+	mrpc.HandleConnection(r.Context(), transport_conn, unpackSetting)
 }
 
 var (
@@ -131,7 +136,6 @@ var (
 					// })
 					group.Bind(adminCtrl) //平台管理员
 				})
-
 			})
 			s.BindHandler("/api/ws", wsHandler) //websocket
 			// Custom enhance API document.

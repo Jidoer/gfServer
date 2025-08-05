@@ -22,3 +22,4 @@ api/test_api
 internal/controller/test_api
 *.dll
 *.exe
+gen_key.py

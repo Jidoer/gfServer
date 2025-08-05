@@ -8,12 +8,15 @@ import (
 	"gfAdmin/internal/model/do"
 	"gfAdmin/internal/model/entity"
 	"gfAdmin/internal/service"
+	"math/rand"
 	"time"
 
 	"github.com/gogf/gf/v2/database/gdb"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
+
 	// "github.com/gogf/gf/v2/os/gcache"
+	uuid "github.com/satori/go.uuid"
 )
 
 type (
@@ -63,6 +66,104 @@ func (s *sUser) Create(ctx context.Context, in model.UserCreateInput) (err error
 		}).Insert()
 		return err
 	})
+}
+
+func (s *sUser) AutoCreate(ctx context.Context, in model.UserCreateInput) (token string, err error) {
+	var (
+		available bool
+	)
+	available, err = s.CheckPassport(ctx, in.Passport)
+	if !available {
+		err = gerror.Newf(`Nickname "%s" is already token by others`, in.Nickname)
+	}
+	if err != nil {
+		return
+	}
+	err = dao.User.Transaction(ctx, func(ctx context.Context, tx gdb.TX) error {
+		_, err = dao.User.Ctx(ctx).Data(do.User{
+			Passport: in.Passport,
+			Password: in.Password,
+			Nickname: in.Nickname,
+		}).Insert()
+		return err
+	})
+	if err != nil {
+		return
+	}
+	//sign in
+	var user *model.User_role_db
+	err = g.Model(model.User_role_db{}).Where(do.User{
+		Passport: in.Passport,
+		Password: in.Password,
+	}).WithAll().Scan(&user)
+	if err != nil {
+		return
+	}
+	if user == nil {
+		err = gerror.New(`Passport or Password not correct`)
+		return
+	}
+	var user_session model.User_Session
+	var permissions []string
+	for _, v := range user.Roles.RolePermissions {
+		permissions = append(permissions, v.Permissions.Name)
+	}
+	// if len(user.Roles.RolePermissions) > 0 {
+	user_session.Roles = make([]string, 1)
+	user_session.Roles[0] = user.Roles.Name
+	user_session.Auths = permissions
+	if err = service.Session().SetUser(ctx, &user_session); err != nil {
+		return
+	}
+	var us model.LoginInfo_last
+	u, _ := cache.Instance().Get(context.Background(), "user_"+user.Passport)
+	// u := cache.MustGet("user_" + user.Passport)
+	if err = u.Scan(&us); err != nil {
+		//panic(err)
+		logger.Error(context.Background(), "Get cache error: %v", err)
+	}
+	token, _ = service.BizCtx().Get(ctx).Session.Id()
+	us = model.LoginInfo_last{
+		Id:        user.Id,
+		LoginTime: time.Now(),
+		Passport:  user.Passport,
+		// Ip: r,
+		// Device: ,
+		Token: token,
+	}
+	err = cache.Instance().Set(context.Background(), "user_"+user.Passport, us, time.Second*180)
+	// err = cache.CacheSet("user_"+user.Passport, us, time.Second*180)
+	if err != nil {
+		logger.Error(context.Background(), "Set cache error: %v", err)
+	}
+	service.BizCtx().SetUser(ctx, &model.ContextUser{
+		Id:       user.Id,
+		Passport: user.Passport,
+		Nickname: user.Nickname,
+		Email:    user.Email,
+		Phone:    user.Phone,
+		Role:     user.Role,
+		Status:   user.Status,
+		// SessionID: service.Session().GetSessionId(ctx),
+	})
+	return
+}
+
+func (s *sUser) GetRandomPassport() string {
+	return uuid.Must(uuid.NewV4(), nil).String()
+}
+func (s *sUser) GetRandomPassword() string {
+	return uuid.Must(uuid.NewV4(), nil).String()
+}
+func (s *sUser) GetRandomNickname() string {
+	prefixes := []string{"炫酷", "狂野", "疾风", "暗影", "魔法", "钢铁", "疾速", "雷霆"}
+	names := []string{"战士", "刺客", "猎人", "法师", "骑士", "领主", "剑魂", "影刃"}
+	suffixes := []string{"001", "X", "Pro", "王者", "之魂", "大帝", "", "", ""} // 有些后缀为空，模拟可选项
+	rand.Seed(time.Now().UnixNano())
+	prefix := prefixes[rand.Intn(len(prefixes))]
+	name := names[rand.Intn(len(names))]
+	suffix := suffixes[rand.Intn(len(suffixes))]
+	return prefix + name + suffix
 }
 
 // IsSignedIn checks and returns whether current user is already signed-in.
@@ -130,6 +231,7 @@ func (s *sUser) SignIn(ctx context.Context, in model.UserSignInInput) (err error
 		Status:   user.Status,
 		// SessionID: service.Session().GetSessionId(ctx),
 	})
+	// return token, nil
 	return nil
 }
 
@@ -151,13 +253,14 @@ func (s *sUser) CheckPassport(ctx context.Context, passport string) (bool, error
 
 // IsNicknameAvailable checks and returns given nickname is available for signing up.
 func (s *sUser) IsNicknameAvailable(ctx context.Context, nickname string) (bool, error) {
-	count, err := dao.User.Ctx(ctx).Where(do.User{
-		Nickname: nickname,
-	}).Count()
-	if err != nil {
-		return false, err
-	}
-	return count == 0, nil
+	// count, err := dao.User.Ctx(ctx).Where(do.User{
+	// 	Nickname: nickname,
+	// }).Count()
+	// if err != nil {
+	// 	return false, err
+	// }
+	// return count == 0, nil
+	return true,nil // always available
 }
 
 // GetProfile retrieves and returns current user info in session.

@@ -15,6 +15,10 @@ type (
 	IUser interface {
 		// Create creates user account.
 		Create(ctx context.Context, in model.UserCreateInput) (err error)
+		AutoCreate(ctx context.Context, in model.UserCreateInput) (token string, err error)
+		GetRandomPassport() string
+		GetRandomPassword() string
+		GetRandomNickname() string
 		// IsSignedIn checks and returns whether current user is already signed-in.
 		IsSignedIn(ctx context.Context) bool
 		// SignIn creates session for given user account.

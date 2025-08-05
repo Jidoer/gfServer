@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package protorpc;
+option go_package ="../protorpc";
+option csharp_namespace = "cspb";  // 给C#提供的选项
+
+
+message Server{
+    string id = 1;
+    string name = 2;    
+    string ip = 3;
+    int32 port = 4;
+    int32 GameType = 5;
+    int32 Version = 6;
+}
+message RegisterServerParam{
+    string AuthKey = 1;
+    Server ServerInfo = 2;
+}
+
+message RegisterServerResult{
+    bool result = 1;
+}
+
+message ServerListParam{
+}
+
+message ServerListResult{
+    bool result = 1;
+    repeated Server list = 2;
+}
+
+

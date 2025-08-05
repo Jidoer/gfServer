@@ -22,6 +22,36 @@ type RegisterReq struct {
 }
 type RegisterRes struct{}
 
+type PhoneRegisterReq struct
+{
+	g.Meta    `path:"/user/phone_register" method:"post" tags:"UserService" summary:"注册一个新用户"`
+	Phone     string `v:"required|length:6,16"`
+	// Password  string `v:"required|length:6,16"`
+	// Password2 string `v:"required|length:6,16|same:Password"`
+	// Nickname  string
+}
+
+type PhoneRegisterRes struct{
+	CodeID string
+}
+
+type PhoneRegisterCodeVerifyReq struct
+{
+	g.Meta    `path:"/user/phone_register_code_verify" method:"post" tags:"UserService" summary:"注册一个新用户"`
+	CodeID     string `v:"required|length:1,65"`
+	Code      string `v:"required|length:3,16"`
+	// Password  string `v:"required|length:6,16"`
+	// Password2 string `v:"required|length:6,16|same:Password"`
+	// Nickname  string
+}
+
+type PhoneRegisterCodeVerifyRes struct{ //手机认证后自动生成Token并登录
+	// code != 200 时 即注册失败
+	//拥有返回 即成功
+	User *model.User_Session
+	Token string
+}
+
 type CheckPassportReq struct {
 	g.Meta   `path:"/user/check_passport" method:"post" tags:"UserService" summary:"检查账号是否已经注册"`
 	Passport string `v:"required|length:6,16"`

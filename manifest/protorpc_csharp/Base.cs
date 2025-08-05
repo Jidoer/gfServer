@@ -27,9 +27,9 @@ namespace cspb {
             "CgpiYXNlLnByb3RvEghwcm90b3JwYyImCgVFcnJvchIMCgRjb2RlGAEgASgF",
             "Eg8KB21lc3NhZ2UYAiABKAkiewoNQ2xpZW50TWVzc2FnZRIKCgJpZBgBIAEo",
             "BBIOCgZpc19yZXEYAiABKAgSDgoGbWV0aG9kGAMgASgJEg4KBnBhcmFtcxgE",
-            "IAMoDBIOCgZyZXN1bHQYBSABKAwSHgoFZXJyb3IYBiABKAsyDy5wcm90b3Jw",
+            "IAEoDBIOCgZyZXN1bHQYBSABKAwSHgoFZXJyb3IYBiABKAsyDy5wcm90b3Jw",
             "Yy5FcnJvciJ7Cg1TZXJ2ZXJNZXNzYWdlEgoKAmlkGAEgASgEEg4KBmlzX3Jl",
-            "cRgCIAEoCBIOCgZtZXRob2QYAyABKAkSDgoGcGFyYW1zGAQgAygMEg4KBnJl",
+            "cRgCIAEoCBIOCgZtZXRob2QYAyABKAkSDgoGcGFyYW1zGAQgASgMEg4KBnJl",
             "c3VsdBgFIAEoDBIeCgVlcnJvchgGIAEoCzIPLnByb3RvcnBjLkVycm9yQhRa",
             "Cy4uL3Byb3RvcnBjqgIEY3NwYmIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
@@ -317,7 +317,7 @@ namespace cspb {
       id_ = other.id_;
       isReq_ = other.isReq_;
       method_ = other.method_;
-      params_ = other.params_.Clone();
+      params_ = other.params_;
       result_ = other.result_;
       error_ = other.error_ != null ? other.error_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
@@ -367,13 +367,17 @@ namespace cspb {
 
     /// <summary>Field number for the "params" field.</summary>
     public const int ParamsFieldNumber = 4;
-    private static readonly pb::FieldCodec<pb::ByteString> _repeated_params_codec
-        = pb::FieldCodec.ForBytes(34);
-    private readonly pbc::RepeatedField<pb::ByteString> params_ = new pbc::RepeatedField<pb::ByteString>();
+    private pb::ByteString params_ = pb::ByteString.Empty;
+    /// <summary>
+    ///repeated 
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<pb::ByteString> Params {
+    public pb::ByteString Params {
       get { return params_; }
+      set {
+        params_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
     }
 
     /// <summary>Field number for the "result" field.</summary>
@@ -424,7 +428,7 @@ namespace cspb {
       if (Id != other.Id) return false;
       if (IsReq != other.IsReq) return false;
       if (Method != other.Method) return false;
-      if(!params_.Equals(other.params_)) return false;
+      if (Params != other.Params) return false;
       if (Result != other.Result) return false;
       if (!object.Equals(Error, other.Error)) return false;
       return Equals(_unknownFields, other._unknownFields);
@@ -437,7 +441,7 @@ namespace cspb {
       if (Id != 0UL) hash ^= Id.GetHashCode();
       if (IsReq != false) hash ^= IsReq.GetHashCode();
       if (Method.Length != 0) hash ^= Method.GetHashCode();
-      hash ^= params_.GetHashCode();
+      if (Params.Length != 0) hash ^= Params.GetHashCode();
       if (Result.Length != 0) hash ^= Result.GetHashCode();
       if (error_ != null) hash ^= Error.GetHashCode();
       if (_unknownFields != null) {
@@ -470,7 +474,10 @@ namespace cspb {
         output.WriteRawTag(26);
         output.WriteString(Method);
       }
-      params_.WriteTo(output, _repeated_params_codec);
+      if (Params.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteBytes(Params);
+      }
       if (Result.Length != 0) {
         output.WriteRawTag(42);
         output.WriteBytes(Result);
@@ -501,7 +508,10 @@ namespace cspb {
         output.WriteRawTag(26);
         output.WriteString(Method);
       }
-      params_.WriteTo(ref output, _repeated_params_codec);
+      if (Params.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteBytes(Params);
+      }
       if (Result.Length != 0) {
         output.WriteRawTag(42);
         output.WriteBytes(Result);
@@ -529,7 +539,9 @@ namespace cspb {
       if (Method.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Method);
       }
-      size += params_.CalculateSize(_repeated_params_codec);
+      if (Params.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeBytesSize(Params);
+      }
       if (Result.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeBytesSize(Result);
       }
@@ -557,7 +569,9 @@ namespace cspb {
       if (other.Method.Length != 0) {
         Method = other.Method;
       }
-      params_.Add(other.params_);
+      if (other.Params.Length != 0) {
+        Params = other.Params;
+      }
       if (other.Result.Length != 0) {
         Result = other.Result;
       }
@@ -599,7 +613,7 @@ namespace cspb {
             break;
           }
           case 34: {
-            params_.AddEntriesFrom(input, _repeated_params_codec);
+            Params = input.ReadBytes();
             break;
           }
           case 42: {
@@ -645,7 +659,7 @@ namespace cspb {
             break;
           }
           case 34: {
-            params_.AddEntriesFrom(ref input, _repeated_params_codec);
+            Params = input.ReadBytes();
             break;
           }
           case 42: {
@@ -704,7 +718,7 @@ namespace cspb {
       id_ = other.id_;
       isReq_ = other.isReq_;
       method_ = other.method_;
-      params_ = other.params_.Clone();
+      params_ = other.params_;
       result_ = other.result_;
       error_ = other.error_ != null ? other.error_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
@@ -757,16 +771,17 @@ namespace cspb {
 
     /// <summary>Field number for the "params" field.</summary>
     public const int ParamsFieldNumber = 4;
-    private static readonly pb::FieldCodec<pb::ByteString> _repeated_params_codec
-        = pb::FieldCodec.ForBytes(34);
-    private readonly pbc::RepeatedField<pb::ByteString> params_ = new pbc::RepeatedField<pb::ByteString>();
+    private pb::ByteString params_ = pb::ByteString.Empty;
     /// <summary>
-    ///ADD req mod no need
+    ///repeated 
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<pb::ByteString> Params {
+    public pb::ByteString Params {
       get { return params_; }
+      set {
+        params_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
     }
 
     /// <summary>Field number for the "result" field.</summary>
@@ -811,7 +826,7 @@ namespace cspb {
       if (Id != other.Id) return false;
       if (IsReq != other.IsReq) return false;
       if (Method != other.Method) return false;
-      if(!params_.Equals(other.params_)) return false;
+      if (Params != other.Params) return false;
       if (Result != other.Result) return false;
       if (!object.Equals(Error, other.Error)) return false;
       return Equals(_unknownFields, other._unknownFields);
@@ -824,7 +839,7 @@ namespace cspb {
       if (Id != 0UL) hash ^= Id.GetHashCode();
       if (IsReq != false) hash ^= IsReq.GetHashCode();
       if (Method.Length != 0) hash ^= Method.GetHashCode();
-      hash ^= params_.GetHashCode();
+      if (Params.Length != 0) hash ^= Params.GetHashCode();
       if (Result.Length != 0) hash ^= Result.GetHashCode();
       if (error_ != null) hash ^= Error.GetHashCode();
       if (_unknownFields != null) {
@@ -857,7 +872,10 @@ namespace cspb {
         output.WriteRawTag(26);
         output.WriteString(Method);
       }
-      params_.WriteTo(output, _repeated_params_codec);
+      if (Params.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteBytes(Params);
+      }
       if (Result.Length != 0) {
         output.WriteRawTag(42);
         output.WriteBytes(Result);
@@ -888,7 +906,10 @@ namespace cspb {
         output.WriteRawTag(26);
         output.WriteString(Method);
       }
-      params_.WriteTo(ref output, _repeated_params_codec);
+      if (Params.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteBytes(Params);
+      }
       if (Result.Length != 0) {
         output.WriteRawTag(42);
         output.WriteBytes(Result);
@@ -916,7 +937,9 @@ namespace cspb {
       if (Method.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Method);
       }
-      size += params_.CalculateSize(_repeated_params_codec);
+      if (Params.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeBytesSize(Params);
+      }
       if (Result.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeBytesSize(Result);
       }
@@ -944,7 +967,9 @@ namespace cspb {
       if (other.Method.Length != 0) {
         Method = other.Method;
       }
-      params_.Add(other.params_);
+      if (other.Params.Length != 0) {
+        Params = other.Params;
+      }
       if (other.Result.Length != 0) {
         Result = other.Result;
       }
@@ -986,7 +1011,7 @@ namespace cspb {
             break;
           }
           case 34: {
-            params_.AddEntriesFrom(input, _repeated_params_codec);
+            Params = input.ReadBytes();
             break;
           }
           case 42: {
@@ -1032,7 +1057,7 @@ namespace cspb {
             break;
           }
           case 34: {
-            params_.AddEntriesFrom(ref input, _repeated_params_codec);
+            Params = input.ReadBytes();
             break;
           }
           case 42: {

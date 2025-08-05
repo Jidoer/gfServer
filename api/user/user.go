@@ -12,6 +12,8 @@ import (
 
 type IUserV1 interface {
 	Register(ctx context.Context, req *v1.RegisterReq) (res *v1.RegisterRes, err error)
+	PhoneRegister(ctx context.Context, req *v1.PhoneRegisterReq) (res *v1.PhoneRegisterRes, err error)
+	PhoneRegisterCodeVerify(ctx context.Context, req *v1.PhoneRegisterCodeVerifyReq) (res *v1.PhoneRegisterCodeVerifyRes, err error)
 	CheckPassport(ctx context.Context, req *v1.CheckPassportReq) (res *v1.CheckPassportRes, err error)
 	Login(ctx context.Context, req *v1.LoginReq) (res *v1.LoginRes, err error)
 	SignOut(ctx context.Context, req *v1.SignOutReq) (res *v1.SignOutRes, err error)

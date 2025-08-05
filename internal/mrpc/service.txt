@@ -1,0 +1,300 @@
+package service
+
+import (
+	"encoding/json"
+	"fmt"
+	"net"
+	"os"
+	"time"
+	mclient "GoSyncServe/client"
+
+	"google.golang.org/protobuf/proto"
+)
+
+var control = NewControl()
+
+type Server struct {
+	Network string
+	Addr    string
+}
+
+func NewServer(network, addr string) *Server {
+	return &Server{
+		Network: network,
+		Addr:    addr,
+	}
+}
+
+func (s *Server) Run() {
+	listener, err := net.Listen(s.Network, s.Addr)
+	if err != nil {
+		fmt.Println("Error listening:", err)
+		return
+	}
+	defer listener.Close()
+
+	fmt.Println("Server listening on :8080")
+
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			fmt.Println("Error accepting connection:", err)
+			continue
+		}
+
+		go handleConnection(conn)
+	}
+
+}
+
+func handleConnection(conn net.Conn) {
+	defer conn.Close()
+
+	client := NewClient(&conn) // 创建设备信息
+	control.Subscribe(client)  // 设备连接中控台
+
+	jsonData := map[string]interface{}{
+		"message":   "Hello from server (1.0)",
+		"timestamp": time.Now().Unix(),
+		"version":   "1.0",
+	}
+	jsonBytes, _ := json.Marshal(jsonData)
+	protobufMessage := &pb.JsonMessage{
+		JsonData: string(jsonBytes),
+	}
+	protobufMessageBytes, _ := proto.Marshal(protobufMessage) //protobufMessage
+	//封包
+	packeted := packet.Pack(cmd.Json_data, protobufMessageBytes)
+	conn.Write(packeted)
+
+	for {
+		// 接受消息
+		buffer := make([]byte, 1024)
+		n, err := conn.Read(buffer)
+		if err != nil {
+			fmt.Println("Error reading client request:", err)
+			conn.Close()
+			control.UnSubscribe(client) // 设备断开
+			return
+		}
+		// 解包
+		unpkt, err := packet.UnPack(buffer[:n])
+		if err != nil {
+			fmt.Println("Error unpacking:", err)
+			fmt.Println("Broadcasting message:", string(buffer[:n]))
+			//conn.Close()
+			//control.UnSubscribe(client) // 设备断开
+			/*b := pb.Broadcast{
+				Messagetype: 0,
+				From:        client.Id,
+				Content:     string(buffer[:n]),
+				Timestamp:   time.Now().Unix(),
+			}
+			bBytes, _ := proto.Marshal(&b)
+			//conn.Write(packet.Pack(cmd.Broadcast, bBytes))
+			control.Broadcast(NewMessage(client, packet.Pack(cmd.Broadcast, bBytes)))*/
+			err := os.WriteFile("logs/log"+fmt.Sprint(time.Now().Unix())+".hex", buffer[:n], 0644)
+			if err != nil {
+				fmt.Println(err)
+			}
+			conn.Write(packet.Pack(cmd.Json_data, []byte("ok!"))) //欺骗
+			continue
+		}
+		switch unpkt.Cmd {
+		case cmd.Json_data:
+			fmt.Println("[J]", string(unpkt.Bytes))
+		case cmd.Message:
+			fmt.Println("[M]", string(unpkt.Bytes))
+		case cmd.GetServerList:
+			fmt.Println("[G]", "Client Get Server List")
+			if client.Userinfo == nil {
+				fmt.Println("[G]", "ERROR: no userinfo")
+
+				continue
+			}
+			sl := control.GetServerList()
+			slByte, _ := proto.Marshal(sl)
+			conn.Write(packet.Pack(cmd.GetServerList, slByte))
+		case cmd.Register:
+			fmt.Println("[R]", string(unpkt.Bytes))
+			regpackage := &pb.Register{}
+			err_ := proto.Unmarshal(unpkt.Bytes, regpackage)
+			if err_ != nil {
+				fmt.Println("[R] unmarshal error 0x1")
+				bt, _ := proto.Marshal(&pb.Register_OK{
+					Result: false,
+				})
+				conn.Write(packet.Pack(cmd.Register_OK, bt))
+				continue
+			}
+			user_info := dbase.UserInfo{
+				Username: regpackage.Usrname,
+				Password: regpackage.Password,
+			}
+			user_info_ok, err := dbase.Register(&user_info)
+			if err != nil {
+				fmt.Println("[R] register error :", err, " 0x2")
+				bt, _ := proto.Marshal(&pb.Register_OK{
+					Result: false,
+					User: &pb.UserInfo{
+						Username: "null",
+					},
+				})
+				conn.Write(packet.Pack(cmd.Register_OK, bt))
+				continue
+			}
+			bt_, _ := proto.Marshal(&pb.Register_OK{
+				Result: true,
+				User: &pb.UserInfo{
+					Username: user_info_ok.Username,
+				},
+			})
+			conn.Write(packet.Pack(cmd.Register_OK, bt_))
+			fmt.Println("[R] register success")
+
+		case cmd.Login:
+			//unpacket
+			var uinfo pb.Login
+			err_ := proto.Unmarshal(unpkt.Bytes, &uinfo)
+			if err_ != nil {
+				fmt.Println("[L] unmarshal error 0x1")
+				bt, _ := proto.Marshal(&pb.Login_OK{
+					Result: false,
+				})
+				conn.Write(packet.Pack(cmd.Login_OK, bt))
+				continue
+			}
+			u, tkn, err := dbase.Login(uinfo.Usrname, uinfo.Password)
+			if err != nil {
+				fmt.Println("[L] login error :", err, " 0x2")
+				bt, _ := proto.Marshal(&pb.Login_OK{
+					Result: false,
+				})
+				conn.Write(packet.Pack(cmd.Login_OK, bt))
+				continue
+			}
+			fmt.Println("[L] login success")
+			//set token
+			client.Tokan = tkn
+			client.Userinfo = u
+			bt, _ := proto.Marshal(&pb.Login_OK{
+				Result: true,
+				User: &pb.UserInfo{
+					Uid:      uint64(u.ID),
+					Username: u.Username,
+					Sex:      int32(u.Sex),
+				},
+				Token: tkn,
+			})
+			conn.Write(packet.Pack(cmd.Login_OK, bt))
+		case cmd.LoginWithToken: //Login with Token
+			fmt.Println("[LT] login with token")
+			var with_tkn = pb.LoginWithToken{}
+			err_ := proto.Unmarshal(unpkt.Bytes, &with_tkn)
+			if err_ != nil {
+				fmt.Println("[LT] unmarshal error 0x1")
+				bt, _ := proto.Marshal(&pb.LoginWithTokenOK{
+					Result: false,
+				})
+				conn.Write(packet.Pack(cmd.LoginWithToken_OK, bt))
+				continue
+			}
+			usr, err := dbase.LoginWithToken(with_tkn.Username, with_tkn.Token)
+			if err != nil {
+				fmt.Println("[LT] LoginTkn error 0x2")
+				bt, _ := proto.Marshal(&pb.LoginWithTokenOK{
+					Result: false,
+				})
+				conn.Write(packet.Pack(cmd.LoginWithToken_OK, bt))
+				continue
+			}
+			fmt.Println("[LT] login success")
+			//set token
+			client.Tokan = with_tkn.Token
+			client.Userinfo = usr
+			bt, _ := proto.Marshal(&pb.LoginWithTokenOK{
+				Result: true,
+				User: &pb.UserInfo{
+					Uid:      uint64(usr.ID),
+					Username: usr.Username,
+					Sex:      int32(usr.Sex),
+				},
+				Token: with_tkn.Token,
+			})
+			conn.Write(packet.Pack(cmd.LoginWithToken_OK, bt))
+		case cmd.Match:
+			fmt.Println("[M] match")
+			if client.Userinfo == nil {
+				fmt.Println("[M] ERROR: no userinfo")
+				continue
+			}
+			var match pb.Match
+			err_ := proto.Unmarshal(unpkt.Bytes, &match)
+			if err_ != nil {
+				fmt.Println("[M] unmarshal error 0x1")
+				bt, _ := proto.Marshal(&pb.Match_OK{
+					//Result: false,
+				})
+				conn.Write(packet.Pack(cmd.MatchOK, bt))
+				continue
+			}
+			fmt.Println("[M] matching...")
+			//set token
+			go MatchMe(*client, int(match.MatchType))
+			//先让他等待结果
+			bt, _ := proto.Marshal(&pb.Match_OK{
+				Iswiating: true,
+			})
+			conn.Write(packet.Pack(cmd.MatchOK, bt)) //让客户端等待
+
+		//注册服务器
+		case cmd.Register_Server:
+			fmt.Println("[RS] register server")
+			var s pb.Register_Server
+			err_ := proto.Unmarshal(unpkt.Bytes, &s)
+			if err_ != nil {
+				fmt.Println("[M] unmarshal error 0x1")
+				bt, _ := proto.Marshal(&pb.RegisterServer_OK{
+					Result: false,
+				})
+				conn.Write(packet.Pack(cmd.RegisterServer_OK, bt))
+				conn.Close()
+				continue
+			}
+			if s.AuthKey != "_kMK,dk(Ml*kd&e+k#Kc=$dK;Kn,d=e#4dc=s.@dld-lss^ss~HtuP" {
+				fmt.Println("[RS] auth key error")
+				bt, _ := proto.Marshal(&pb.RegisterServer_OK{
+					Result: false,
+				})
+				conn.Write(packet.Pack(cmd.RegisterServer_OK, bt))
+				conn.Close()
+				continue
+			}
+			fmt.Println("[RS] register server success")
+			//set Info
+			client.Service = &mclient.SubServer{
+				Id:       s.ServerInfo.Id,
+				IP:       s.ServerInfo.IP,
+				Name:     s.ServerInfo.Name,
+				Port:     int(s.ServerInfo.Port),
+				GameType: int(s.ServerInfo.GameType),
+			}
+			client.Auth = 2
+			b,_:=proto.Marshal(&pb.RegisterServer_OK{Result: true})
+			conn.Write(packet.Pack(cmd.RegisterServer_OK,b))
+		}
+
+		/*buffer_p := &pb.Broadcast{
+			Messagetype: 0,
+			From:        client.Id,
+			Content: string(buffer),
+			Timestamp: time.Now().Unix(),
+		}
+		buffer_, _ := proto.Marshal(buffer_p)
+
+		message := NewMessage(client, packet.Pack(cmd.Broadcast, buffer_)) // 创建消息体
+		control.Broadcast(message)             // 广播消息
+		*/
+	}
+
+}

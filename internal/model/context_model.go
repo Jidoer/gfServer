@@ -25,7 +25,6 @@ type ContextUser struct {
 	//more
 	RoleName string
 	Auths    []string `json:"auths"` //permissions from role
-
 }
 // type ContextPrintServer struct {
 // 	Session *PrintServer_Session

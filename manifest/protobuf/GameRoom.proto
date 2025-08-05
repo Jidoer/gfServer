@@ -1,0 +1,130 @@
+syntax = "proto3";
+
+package protorpc;
+option go_package ="../protorpc";
+option csharp_namespace = "cspb";  // 给C#提供的选项
+import "server.proto"; 
+
+// message GameRoom {
+//     string id = 1; // 房间ID
+//     string name = 2; // 房间名称
+//     int32 max_players = 3; // 最大玩家数
+//     int32 current_players = 4; // 当前玩家数
+//     string game_type = 5; // 游戏类型
+//     string status = 6; // 房间状态（如：等待中、进行中、已结束）
+//     repeated string player_ids = 7; // 玩家ID列表
+//     string creator_id = 8; // 创建者ID
+// }
+
+message Player{
+	//Client_ client.Client
+    string ClientID = 1;
+    int32 uid = 2;
+	string Username = 3;
+	//Sex      int    `json:"sex"`
+	//Money    int    `json:"money"`
+}
+
+message GameRoom{
+    string Key = 1;
+    string RoomName = 2;
+    string ip = 3;
+    int32 port = 4;
+    int32 current_players = 5; // 当前玩家数
+	repeated Player Playeras = 6;
+	int32 Turn = 7;
+	bool Finished = 8;
+	bool Matched = 9;
+	int32 GameType = 10; //opening_xxx closed_xxx
+    string status = 11; // 房间状态（如：等待中、进行中、已结束）
+    string creator_id = 12; // 创建者ID
+}
+
+//Mester-->subServer
+message CreateRoomParam{
+    string Key = 1;
+    int32 GameType = 2; //un use
+    GameRoom room =3;
+}
+//Mester<--subServer
+message CreateRoomResult{
+    string RoomKey = 1;
+    bool Result = 2;
+}
+
+
+message GamePlaying{
+    string Key = 1;
+    repeated Player Playeras = 2;
+    int32 GameStatus = 3;
+}
+
+//------------SCORE---
+message GameFinished{
+    string Key = 1;
+    repeated Player Playeras = 2;
+    int32 GameStatus = 3;
+    repeated PlayerScore scores = 4;
+}
+
+message PlayerScore{
+    int32 PlayerUID = 1;
+    int32 Score = 2;
+    string Username = 3;
+}
+//------------END SCORE---
+
+//opening room lists
+message RoomListParam{
+    int32 GameType = 1; //游戏类型
+}
+message RoomListResult{
+    repeated GameRoom Rooms = 1; //房间列表
+    bool Result = 2; //操作结果
+}
+
+//-------------------------------匹配-------------
+
+enum MatchStatus {
+    MATCHING = 0;
+    MATCHED = 1;
+    FAILED = 2;
+    CONNECTING = 3; //连接中
+    CONNECTED = 4; //连接成功
+    DISCONNECTED = 5; //连接断开
+    TIMEOUT = 6; //连接超时
+    CANCEL = 7; //取消匹配
+    ERROR = 8; //错误  
+}
+
+
+//CLIENT --> SERVER  request
+message MatchParam{
+    string id = 1; //没啥用 服务器存储用户信息
+    int32 match_type = 2;
+}
+//SERVER --> CLIENT response
+// 服务器收到匹配请求 客户端等待匹配结果
+message MatchResult{
+    bool result = 1;
+    MatchStatus status = 2; //匹配状态
+}
+
+// SERVER --> CLIENT
+// 匹配成功通知客户端
+message MatchOKParam{
+    bool result = 1;
+    GameRoom room = 2;
+    Server match_server = 3;
+    string room_key = 4;
+    MatchStatus status = 5; //匹配状态
+}
+
+//CLIENT(√) --> SERVER
+//客户端收到通知 客户端连接SUB服务器
+message MatchOKResult{
+    bool result = 1;
+    MatchStatus status = 2; //连接状态
+}
+
+

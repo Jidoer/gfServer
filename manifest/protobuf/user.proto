@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package protorpc;
+option go_package ="../protorpc";
+option csharp_namespace = "cspb";  // 给C#提供的选项
+
+message UserInfo{
+    uint64  uid     = 1;
+    string  username    = 2;
+    string ClientID = 4;
+    int32 Money = 5;
+        
+}
+
+//--------------LOGIN---------------------
+message LoginParam {
+    string username = 1;
+    string password = 2;
+}
+message LoginResult {
+    bool result = 1;
+    UserInfo user = 2;
+    string token = 3;
+}
+//--------------Register--------------------
+message RegisterParam {
+    string username = 1;
+    string password = 2;
+}
+message RegisterResult {
+    bool result = 1;
+    UserInfo user = 2;
+}
+
+message AutoRegisterParam {
+    string  serial_id    = 1;
+}
+
+message AutoRegisterResult {
+    uint64  user_id     = 1;
+    string  username     = 2;
+    string  token       = 3;
+}
+
+//------------------------------------------
+message LoginWithTokenParam {
+
+    string username = 1;
+    string token = 2;
+}
+
+message LoginWithTokenResult {
+
+    bool result = 1;
+    UserInfo user = 2;
+    string token = 3;
+}
