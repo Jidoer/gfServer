@@ -51,7 +51,7 @@ const Authorization = "Basic NDNjYTIzNjUtN2YxNy00NTJjLWEzZTgtNzYyZjRjNzIwYWYwOjE
 type Room struct {
 }
 
-func (s *sRooms) CreateRoom(ctx context.Context, in *model.Room_CreateRoomReq) (out *model.Room_CreateRoomRes, err error) {
+func (s *sRooms) CreateRoom(in *model.Room_CreateRoomReq) (out *model.Room_CreateRoomRes, err error) {
 	logger.Println("CreateRoom()")
 	if in == nil {
 		return nil, gerror.New("CreateRoomReq is nil")

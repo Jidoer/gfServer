@@ -33,8 +33,8 @@ func init() {
 	service.RegisterMiddleware(New())
 	//init MySessionManager
 	g.Log("[init]").Info(context.Background(), "init MySessionManager")
-	manager := gsession.New(time.Second * 180)
-	manager.SetStorage(gsession.NewStorageMemory())
+	manager := gsession.New(time.Hour * 24 * 30)
+	manager.SetStorage(gsession.NewStorageMemory()) //(gsession.NewStorageMemory())
 	ctx := gctx.New()
 	manager_ = NewSessionManager(manager, &ctx)
 }
@@ -100,14 +100,16 @@ func (s *sMiddleware) Ctx(r *ghttp.Request) {
 // 3.对path进行鉴权
 func (s *sMiddleware) Auth(r *ghttp.Request) {
 	if service.User().IsSignedIn(r.Context()) {
+		// logger.Print(r.Context(), "用户已登录")
 		r.Middleware.Next()
 	} else {
+		// logger.Print(r.Context(), "用户x登录")
 		r.Response.WriteStatus(http.StatusForbidden)
 	}
 }
 
 func (s *sMiddleware) AuthPath(r *ghttp.Request, need_permissions *[]string) {
-	if service.User().HavedAllPermissions(r.Context(),need_permissions) {
+	if service.User().HavedAllPermissions(r.Context(), need_permissions) {
 		r.Middleware.Next()
 	} else {
 		r.Response.WriteStatus(http.StatusForbidden)

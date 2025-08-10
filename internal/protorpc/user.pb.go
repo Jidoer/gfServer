@@ -524,6 +524,95 @@ func (x *LoginWithTokenResult) GetToken() string {
 	return ""
 }
 
+type GotoLobbyParam struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GotoLobbyParam) Reset() {
+	*x = GotoLobbyParam{}
+	mi := &file_user_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GotoLobbyParam) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GotoLobbyParam) ProtoMessage() {}
+
+func (x *GotoLobbyParam) ProtoReflect() protoreflect.Message {
+	mi := &file_user_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GotoLobbyParam.ProtoReflect.Descriptor instead.
+func (*GotoLobbyParam) Descriptor() ([]byte, []int) {
+	return file_user_proto_rawDescGZIP(), []int{9}
+}
+
+type GotoLobbyResult struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// uint64  uid     = 1;
+	Result        bool   `protobuf:"varint,1,opt,name=result,proto3" json:"result,omitempty"`
+	Message       string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GotoLobbyResult) Reset() {
+	*x = GotoLobbyResult{}
+	mi := &file_user_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GotoLobbyResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GotoLobbyResult) ProtoMessage() {}
+
+func (x *GotoLobbyResult) ProtoReflect() protoreflect.Message {
+	mi := &file_user_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GotoLobbyResult.ProtoReflect.Descriptor instead.
+func (*GotoLobbyResult) Descriptor() ([]byte, []int) {
+	return file_user_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *GotoLobbyResult) GetResult() bool {
+	if x != nil {
+		return x.Result
+	}
+	return false
+}
+
+func (x *GotoLobbyResult) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 var File_user_proto protoreflect.FileDescriptor
 
 var file_user_proto_rawDesc = string([]byte{
@@ -576,8 +665,14 @@ var file_user_proto_rawDesc = string([]byte{
 	0x28, 0x0b, 0x32, 0x12, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x72, 0x70, 0x63, 0x2e, 0x55, 0x73,
 	0x65, 0x72, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x04, 0x75, 0x73, 0x65, 0x72, 0x12, 0x14, 0x0a, 0x05,
 	0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x74, 0x6f, 0x6b,
-	0x65, 0x6e, 0x42, 0x14, 0x5a, 0x0b, 0x2e, 0x2e, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x72, 0x70,
-	0x63, 0xaa, 0x02, 0x04, 0x63, 0x73, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x65, 0x6e, 0x22, 0x10, 0x0a, 0x0e, 0x47, 0x6f, 0x74, 0x6f, 0x4c, 0x6f, 0x62, 0x62, 0x79, 0x50,
+	0x61, 0x72, 0x61, 0x6d, 0x22, 0x43, 0x0a, 0x0f, 0x47, 0x6f, 0x74, 0x6f, 0x4c, 0x6f, 0x62, 0x62,
+	0x79, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x72, 0x65, 0x73, 0x75, 0x6c,
+	0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x06, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x12,
+	0x18, 0x0a, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42, 0x14, 0x5a, 0x0b, 0x2e, 0x2e, 0x2f,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x72, 0x70, 0x63, 0xaa, 0x02, 0x04, 0x63, 0x73, 0x70, 0x62, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 })
 
 var (
@@ -592,7 +687,7 @@ func file_user_proto_rawDescGZIP() []byte {
 	return file_user_proto_rawDescData
 }
 
-var file_user_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_user_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_user_proto_goTypes = []any{
 	(*UserInfo)(nil),             // 0: protorpc.UserInfo
 	(*LoginParam)(nil),           // 1: protorpc.LoginParam
@@ -603,6 +698,8 @@ var file_user_proto_goTypes = []any{
 	(*AutoRegisterResult)(nil),   // 6: protorpc.AutoRegisterResult
 	(*LoginWithTokenParam)(nil),  // 7: protorpc.LoginWithTokenParam
 	(*LoginWithTokenResult)(nil), // 8: protorpc.LoginWithTokenResult
+	(*GotoLobbyParam)(nil),       // 9: protorpc.GotoLobbyParam
+	(*GotoLobbyResult)(nil),      // 10: protorpc.GotoLobbyResult
 }
 var file_user_proto_depIdxs = []int32{
 	0, // 0: protorpc.LoginResult.user:type_name -> protorpc.UserInfo
@@ -626,7 +723,7 @@ func file_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_user_proto_rawDesc), len(file_user_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

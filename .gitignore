@@ -23,3 +23,10 @@ internal/controller/test_api
 *.dll
 *.exe
 gen_key.py
+.well-known
+*.key
+*.crt
+*.pem
+manifest/protorpc
+manifest/protorpc_csharp
+start.cmd

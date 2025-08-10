@@ -38,3 +38,4 @@ func Rpc_client_create_room(cli *client.Client, parms *protorpc.CreateRoomParam)
 	return result, nil
 }
 
+

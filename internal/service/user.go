@@ -15,7 +15,7 @@ type (
 	IUser interface {
 		// Create creates user account.
 		Create(ctx context.Context, in model.UserCreateInput) (err error)
-		AutoCreate(ctx context.Context, in model.UserCreateInput) (token string, err error)
+		AutoCreate(ctx context.Context, phone string) (token string, user *model.User_role_db, err error)
 		GetRandomPassport() string
 		GetRandomPassword() string
 		GetRandomNickname() string
@@ -27,6 +27,7 @@ type (
 		SignOut(ctx context.Context) error
 		// IsPassportAvailable checks and returns given passport is available for signing up.
 		CheckPassport(ctx context.Context, passport string) (bool, error)
+		CheckPhone(ctx context.Context, phone string) (bool, error)
 		// IsNicknameAvailable checks and returns given nickname is available for signing up.
 		IsNicknameAvailable(ctx context.Context, nickname string) (bool, error)
 		// GetProfile retrieves and returns current user info in session.

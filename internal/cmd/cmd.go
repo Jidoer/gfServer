@@ -38,15 +38,6 @@ var upgrader = websocket.Upgrader{
 func wsHandler(r *ghttp.Request) {
 	// p := r.Cookie.Get("p") //PassPort
 	// t := r.Cookie.Get("t") //Token
-	// err := service.PrintServer().DB_Auth(r.Context(), p.String(), t.String())
-	// if err != nil {
-	// 	r.Response.WriteStatus(http.StatusForbidden)
-	// 	return
-	// }
-	// if service.PrintServer().Get(r.Context()) == nil {
-	// 	r.Response.WriteStatus(http.StatusForbidden)
-	// 	return
-	// }
 	// service.BizCtx().Init()
 	logger.Info(r.Context(), "WebSocket 验证...")
 	service.Middleware().Ctx(r)
@@ -55,7 +46,7 @@ func wsHandler(r *ghttp.Request) {
 	logger.Info(r.Context(), "WebSocket 认证成功 连接建立...")
 	conn, err := upgrader.Upgrade(r.Response.ResponseWriter, r.Request, nil)
 	if err != nil {
-		logger.Error(r.Context(), "WebSocket 连接失败:", err)
+		logger.Error(r.Context(), "WebSocket Upgrade 失败:", err)
 		return
 	}
 	unpackSetting := mrpc.UnpackSetting{
@@ -141,6 +132,7 @@ var (
 			// Custom enhance API document.
 			enhanceOpenAPIDoc(s)
 			InitSystem()
+			s.EnableHTTPS("server.pem","server.key")
 			// Just run the server.
 			s.Run()
 			return nil

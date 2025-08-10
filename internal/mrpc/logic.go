@@ -1,8 +1,11 @@
 package mrpc
 
 import (
+	"context"
 	"gfAdmin/internal/client"
 	"gfAdmin/internal/model"
+	"gfAdmin/internal/service"
+
 	// "gfAdmin/internal/dbase"
 	"fmt"
 	"gfAdmin/internal/protorpc"
@@ -53,7 +56,7 @@ type Player struct {
 	Player_type int
 	// Userinfo_   dbase.UserInfo
 	Userinfo_ *model.ContextUser
-	ctx *model.Context
+	ctx       *model.Context
 }
 type room_control struct {
 	lock  sync.Mutex
@@ -267,28 +270,37 @@ func (game *GameRoom) SentToJoinRoom() {
 	}
 }
 
-func (game *GameRoom) CreateOnlineRoomWaitResult() (*protorpc.CreateRoomResult, error) {
-	//find sub server client
-	LIST := control.GetSubServerClientList()
-	if LIST == nil || len(*LIST) == 0 {
-		return nil, fmt.Errorf("no sub server client found")
-	}
-	sub_server_cli := (*LIST)[0]
-	if sub_server_cli == nil {
-		return nil, fmt.Errorf("sub server client is nil")
-	}
-	game.SubServer = sub_server_cli //set sub server client to game room
-	//Create room req to sub server
-	fmt.Println("CreateOnlineRoomWaitResult()")
-	result, err := Rpc_client_create_room(sub_server_cli, &protorpc.CreateRoomParam{
+func (game *GameRoom) CreateOnlineRoomWaitResult(Context context.Context) (*protorpc.CreateRoomResult, error) {
+	// //find sub server client
+	// LIST := control.GetSubServerClientList()
+	// if LIST == nil || len(*LIST) == 0 {
+	// 	return nil, fmt.Errorf("no sub server client found")
+	// }
+	// sub_server_cli := (*LIST)[0]
+	// if sub_server_cli == nil {
+	// 	return nil, fmt.Errorf("sub server client is nil")
+	// }
+	// game.SubServer = sub_server_cli //set sub server client to game room
+	// //Create room req to sub server
+	// fmt.Println("CreateOnlineRoomWaitResult()")
+	// result, err := Rpc_client_create_room(sub_server_cli, &protorpc.CreateRoomParam{
+	// 	Key: game.Key,
+	// 	Room: &protorpc.GameRoom{
+	// 		Key:      game.Key,
+	// 		RoomName: game.Key,
+	// 	},
+	// })
+	// if err != nil || result == nil {
+	// 	return nil, fmt.Errorf("create room failed: %v", err)
+	// }
+	// return result, nil
+	out, err := service.Rooms().CreateRoom(&model.Room_CreateRoomReq{
 		Key: game.Key,
-		Room: &protorpc.GameRoom{
+		Room: &model.Room_CreateRoomReq_Room{
 			Key:      game.Key,
 			RoomName: game.Key,
 		},
 	})
-	if err != nil || result == nil {
-		return nil, fmt.Errorf("create room failed: %v", err)
-	}
-	return result, nil
+	
+
 }

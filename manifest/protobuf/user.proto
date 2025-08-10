@@ -55,3 +55,14 @@ message LoginWithTokenResult {
     UserInfo user = 2;
     string token = 3;
 }
+
+//------------CMD-------------------------------
+
+message GotoLobbyParam{
+}
+
+message GotoLobbyResult{
+    // uint64  uid     = 1;
+    bool result = 1;
+    string message = 2;
+}

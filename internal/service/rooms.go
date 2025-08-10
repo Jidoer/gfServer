@@ -12,7 +12,8 @@ import (
 
 type (
 	IRooms interface {
-		CreateRoom(ctx context.Context, in *model.Room_CreateRoomReq) (out *model.Room_CreateRoomRes, err error)
+		CreateRoom(in *model.Room_CreateRoomReq) (out *model.Room_CreateRoomRes, err error)
+		QueryRoom(ctx context.Context) (list *model.Room_ListRoomsRes, err error)
 		GetRoomByUuid(ctx context.Context, uuid string) (r *model.Room, err error)
 	}
 )

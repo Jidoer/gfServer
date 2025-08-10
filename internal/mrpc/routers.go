@@ -221,6 +221,16 @@ func rpc_func_server_register_server(conn *TransportConn, req *protorpc.ClientMe
 	})
 }
 
+func rpc_func_server_goto_lobby(conn *TransportConn, req *protorpc.ClientMessage, res *protorpc.ServerMessage) {
+	HandleRPC(req, res, &protorpc.GotoLobbyParam{}, func(param *protorpc.GotoLobbyParam) (*protorpc.GotoLobbyResult, error) {
+		r := &protorpc.GotoLobbyResult{
+			Result: true,
+			Message: "ok~无封禁信息",
+		}
+		return r,nil
+	})
+}
+
 // 路由表
 var Router = []ProtoRPCRouter{
 	// {Method: "rpc_func_server_login", Handler: rpc_func_server_login},
@@ -228,4 +238,5 @@ var Router = []ProtoRPCRouter{
 	// {Method: "rpc_func_server_login_with_token", Handler: rpc_func_server_login_with_token},
 	{Method: "rpc_func_server_match", Handler: rpc_func_server_match},
 	{Method: "rpc_func_server_register_server", Handler: rpc_func_server_register_server},
+	{Method: "rpc_func_server_goto_lobby", Handler: rpc_func_server_goto_lobby},
 }
