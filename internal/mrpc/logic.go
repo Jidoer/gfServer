@@ -1,17 +1,25 @@
 package mrpc
 
 import (
-	"context"
+	// "context"
+	"errors"
 	"gfAdmin/internal/client"
 	"gfAdmin/internal/model"
 	"gfAdmin/internal/service"
+	"gfAdmin/internal/tool"
+	"strings"
+
+	// "gfAdmin/internal/service"
 
 	// "gfAdmin/internal/dbase"
 	"fmt"
+	"gfAdmin/internal/notify"
 	"gfAdmin/internal/protorpc"
 	"math/rand"
 	"sync"
 	"time"
+
+	uuid "github.com/satori/go.uuid"
 )
 
 type MatchResult struct {
@@ -42,8 +50,10 @@ type GameRoom struct {
 	Finished                  bool
 	Matched                   bool
 	GameType                  int
-	SubServer                 *client.Client //room from this server
-	Me                        *client.Client //dbase.UserInfo
+	// SubServer                 *client.Client //room from this server
+	IP   string
+	Port int
+	Me   *client.Client //dbase.UserInfo
 }
 
 const (
@@ -57,6 +67,7 @@ type Player struct {
 	// Userinfo_   dbase.UserInfo
 	Userinfo_ *model.ContextUser
 	ctx       *model.Context
+	UUID      string //room key
 }
 type room_control struct {
 	lock  sync.Mutex
@@ -200,11 +211,23 @@ func (roomsctr *room_control) join(player *Player) (*GameRoom, error) {
 					fmt.Println("room full ! CreateOnlineRoomWaitResult()!")
 					// Room is full
 					//人满了再->在服务器创建房间
-					_, err := room_.CreateOnlineRoomWaitResult()
+					out, err := room_.CreateOnlineRoomWaitResult()
 					if err != nil {
 						return nil, err
 					}
-					//通知所有人，房间已满开始链接服务器？
+					fmt.Println("[OUT]:", out)
+					ports := map[string]string{}
+					for _, p := range out.GameServerPorts {
+						parts := strings.Split(p, "/")
+						if len(parts) >= 2 {
+							ports[strings.ToUpper(parts[1])] = parts[0]
+						}
+					}
+					fmt.Println("UDP:", ports["UDP"], "TCP:", ports["TCP"])
+					port := tool.String2Int(ports["UDP"])
+					room_.IP = out.IP
+					room_.Port = port
+					//通知所有人，房间已满开始链接服务器？ !需要服务器ready才行！！
 					room_.Matched = true
 					room_.SentToJoinRoom()
 				}
@@ -247,14 +270,14 @@ func (game *GameRoom) SentToJoinRoom() {
 				Result:  true,
 				RoomKey: game.Key,
 				MatchServer: &protorpc.Server{
-					Ip:   game.SubServer.Service.IP,
-					Port: int32(game.SubServer.Service.Port),
+					Ip:   game.IP,
+					Port: int32(game.Port),
 					Name: "TestSubServer",
 				},
 				Room: &protorpc.GameRoom{
 					Key:      game.Key,
-					Ip:       game.SubServer.Service.IP,
-					Port:     int32(game.SubServer.Service.Port),
+					Ip:       game.IP,
+					Port:     int32(game.Port),
 					RoomName: "TestRoomName",
 					Finished: false,
 					Playeras: []*protorpc.Player{
@@ -270,37 +293,135 @@ func (game *GameRoom) SentToJoinRoom() {
 	}
 }
 
-func (game *GameRoom) CreateOnlineRoomWaitResult(Context context.Context) (*protorpc.CreateRoomResult, error) {
-	// //find sub server client
-	// LIST := control.GetSubServerClientList()
-	// if LIST == nil || len(*LIST) == 0 {
-	// 	return nil, fmt.Errorf("no sub server client found")
-	// }
-	// sub_server_cli := (*LIST)[0]
-	// if sub_server_cli == nil {
-	// 	return nil, fmt.Errorf("sub server client is nil")
-	// }
-	// game.SubServer = sub_server_cli //set sub server client to game room
-	// //Create room req to sub server
-	// fmt.Println("CreateOnlineRoomWaitResult()")
-	// result, err := Rpc_client_create_room(sub_server_cli, &protorpc.CreateRoomParam{
-	// 	Key: game.Key,
-	// 	Room: &protorpc.GameRoom{
-	// 		Key:      game.Key,
-	// 		RoomName: game.Key,
-	// 	},
-	// })
-	// if err != nil || result == nil {
-	// 	return nil, fmt.Errorf("create room failed: %v", err)
-	// }
-	// return result, nil
-	out, err := service.Rooms().CreateRoom(&model.Room_CreateRoomReq{
-		Key: game.Key,
-		Room: &model.Room_CreateRoomReq_Room{
-			Key:      game.Key,
-			RoomName: game.Key,
+// func (game *GameRoom) CreateOnlineRoomWaitResult() (*model.AllocatedReq, error) {
+// 	// //find sub server client
+// 	// LIST := control.GetSubServerClientList()
+// 	// if LIST == nil || len(*LIST) == 0 {
+// 	// 	return nil, fmt.Errorf("no sub server client found")
+// 	// }
+// 	// sub_server_cli := (*LIST)[0]
+// 	// if sub_server_cli == nil {
+// 	// 	return nil, fmt.Errorf("sub server client is nil")
+// 	// }
+// 	// game.SubServer = sub_server_cli //set sub server client to game room
+// 	// //Create room req to sub server
+// 	// fmt.Println("CreateOnlineRoomWaitResult()")
+// 	// result, err := Rpc_client_create_room(sub_server_cli, &protorpc.CreateRoomParam{
+// 	// 	Key: game.Key,
+// 	// 	Room: &protorpc.GameRoom{
+// 	// 		Key:      game.Key,
+// 	// 		RoomName: game.Key,
+// 	// 	},
+// 	// })
+// 	// if err != nil || result == nil {
+// 	// 	return nil, fmt.Errorf("create room failed: %v", err)
+// 	// }
+// 	// return result, nil
+
+// 	// out, err := service.Rooms().CreateRoom(&model.Room_CreateRoomReq{
+// 	// 	Key: game.Key,
+// 	// 	Room: &model.Room_CreateRoomReq_Room{
+// 	// 		Key:      game.Key,
+// 	// 		RoomName: game.Key,
+// 	// 	},
+// 	// })
+
+// 	uid := uuid.NewV4().String()
+
+// 	out, err := service.Rooms().CreateRoom(&model.AllocationReq{
+// 		UUID:      uid,
+// 		ProfileID: "193ae4b9-6a73-4d3f-8203-7d5a6f67dd9c",
+// 		RegionID:  "7bba5ff1-b4a3-498c-9c0b-24cad73cff54", //上海
+// 		Envs: map[string]string{
+// 			"UUID":             uid,
+// 			"players_env_data": "env2",
+// 		},
+// 	})
+
+// 	return out, err
+// }
+
+// func (game *GameRoom) CreateOnlineRoomWaitResult() (*model.AllocatedReq, error) {
+//     uid := uuid.NewV4().String()
+//     done := make(chan *model.AllocatedReq, 1)
+//     errChan := make(chan error, 1)
+//     go func() {
+//         _, err := service.Rooms().CreateRoom(&model.AllocationReq{
+//             UUID:      uid,
+//             ProfileID: "193ae4b9-6a73-4d3f-8203-7d5a6f67dd9c",
+//             RegionID:  "7bba5ff1-b4a3-498c-9c0b-24cad73cff54", // 上海
+//             Envs: map[string]string{
+//                 "UUID":             uid,
+//                 "players_env_data": "env2",
+//             },
+//         })
+//         if err != nil {
+//             errChan <- err
+//             return
+//         }
+//         // 这里假设 service.Rooms().CreateRoom 只是发起请求
+//         // 真正的创建完成通知由另一个回调触发
+//     }()
+
+//     // 假设我们有一个全局或单例的监听器来等回调
+//     // go func() {
+//     //     // 等待回调，例如从消息队列/WebSocket收到
+//     //     allocated := WaitForRoomAllocated(uid) // 自己实现
+//     //     done <- allocated
+//     // }()
+
+//     select {
+//     case result := <-done:
+//         return result, nil
+//     case err := <-errChan:
+//         return nil, err
+//     case <-time.After(30 * time.Second):
+//         return nil, fmt.Errorf("等待房间创建超时")
+//     }
+// }
+
+func (game *GameRoom) CreateOnlineRoomWaitResult() (*model.AllocatedReq, error) {
+	var players []ReqPlayers
+	for _, v := range game.Players {
+		uid_key := generateId()
+		v.UUID = uid_key
+		players = append(players, ReqPlayers{
+			Passport:   v.Userinfo_.Passport,
+			UID:        int64(v.Userinfo_.Id),
+			Key:        uid_key,
+			Nickname:   v.Userinfo_.Nickname,
+			PlayerType: string(rune(v.Player_type)),
+			// CreatedAt: v.Userinfo_.CreatedAt,
+			// Version: v.Userinfo_.Version,
+		})
+	}
+	env_data, err := CreateMatchEnv(players)
+	if err != nil {
+		return nil, err
+	}
+	uid := uuid.NewV4().String()
+	ch := notify.RegisterWait(uid)
+	_, err = service.Rooms().CreateRoom(&model.AllocationReq{
+		UUID:      uid,
+		ProfileID: "193ae4b9-6a73-4d3f-8203-7d5a6f67dd9c",
+		RegionID:  "7bba5ff1-b4a3-498c-9c0b-24cad73cff54", // 上海
+		Envs: map[string]string{
+			"UUID":             uid,
+			"players_env_data": env_data,
 		},
 	})
-	
-
+	if err != nil {
+		notify.Cancel(uid)
+		return nil, err
+	}
+	select {
+	case result := <-ch:
+		if result == nil {
+			return nil, errors.New("房间创建失败或被取消")
+		}
+		return result, nil
+	case <-time.After(60 * time.Second):
+		notify.Cancel(uid)
+		return nil, errors.New("等待房间创建超时")
+	}
 }
