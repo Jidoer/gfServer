@@ -1,11 +1,10 @@
 package v1
 
+import "gfAdmin/internal/model"
 
 //Romm created
-type RoomCreatedReq struct {
-	RoomId string `json:"roomId"`
-}
+type RoomCreatedReq model.AllocatedReq 
 
-type RoomCreatedRes struct {
-	Success bool `json:"success"`
-}
+// type RoomCreatedRes struct {
+// 	Success bool `json:"success"`
+// }
